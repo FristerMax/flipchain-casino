@@ -1,180 +1,96 @@
 # FlipChain Casino 🎰
 
-> Provably fair on-chain casino on Ethereum Sepolia testnet.  
-> Built in 48 hours · 3 games · 2 smart contracts · Zero real money.
+> Provably fair on-chain casino on Ethereum Sepolia — every result lives on the blockchain.
 
-## 🔗 Links
-
-| | |
-|---|---|
-| **Live URL** | https://chainbet-casino.surge.sh |
-| **CasinoFlip contract** | [0xd80512F239663157F89107A555d3437eCd1fB067](https://sepolia.etherscan.io/address/0xd80512F239663157F89107A555d3437eCd1fB067) |
-| **CasinoV2 contract** | [0x846a27b62bbcdc40E09496E15d11095B48DE9caA](https://sepolia.etherscan.io/address/0x846a27b62bbcdc40E09496E15d11095B48DE9caA) |
-| **Network** | Ethereum Sepolia (chainId 11155111) |
+**Live demo:** https://chainbet-casino.surge.sh  
+**Contract:** [0xC3dc2f4f706f71120c944BE26D6f19100eB896a0](https://sepolia.etherscan.io/address/0xC3dc2f4f706f71120c944BE26D6f19100eB896a0)
 
 ---
 
-## ✅ What Works
+## What Works
 
-- **Wallet connection** — MetaMask via RainbowKit, Sepolia testnet
-- **Deposit** — Send Sepolia ETH to your casino balance on-chain
-- **3 Games** — Coin Flip, Dice (1–100), Limbo (1.01×–9900×)
-- **Withdraw** — Pull your balance back to MetaMask anytime
-- **Provably fair** — Every result verifiable on Etherscan
-- **Sound effects** — Web Audio API, no files needed
-- **Mobile** — Works inside MetaMask in-app browser
+### ✅ Core Flow
+1. **Connect wallet** — MetaMask or Phantom (Ethereum mode), switches to Sepolia automatically
+2. **Deposit** — send Sepolia ETH into the casino contract via the Balance Card
+3. **Play** — 4 fully on-chain games
+4. **Withdraw** — pull your balance back to your wallet at any time
 
----
+### 🎮 Games
 
-## 🎮 Games
+| Game | Mechanics | House Edge | Max Payout |
+|------|-----------|-----------|------------|
+| **Coin Flip** | Pick Heads or Tails | 2.5% | 1.95× |
+| **Dice** | Set a target (2–98), bet Over or Under | 1% | ~99× |
+| **Crash** | Set an exit multiplier, rocket flies until it crashes | 1% | 9900× |
+| **Slots** | 3 reels × 8 symbols, middle row wins | 1% | 50× |
 
-### 🪙 Coin Flip
-Pick Heads or Tails. Win pays **1.95×** (house edge 2.5%).
-
-### 🎲 Dice
-Choose a number 2–98, bet Over or Under.  
-- Higher probability = lower multiplier  
-- Example: Under 50 → 49% chance → **2.02×**  
-- Example: Under 10 → 9% chance → **11×**  
-House edge: **1%**
-
-### ⚡ Limbo
-Set a target multiplier (1.01× to 9900×).  
-A random crash point is generated — if it lands at or above your target, you win.  
-- 2× target → ~50% win chance  
-- 100× target → ~1% win chance  
-House edge: **1%**
+### 🔍 Provably Fair Verification
+Every bet emits a blockchain event with the player address, bet amount, payout, and random seed: `keccak256(block.prevrandao + player + gameCount)`. Anyone can verify any outcome on [Sepolia Etherscan](https://sepolia.etherscan.io/address/0xC3dc2f4f706f71120c944BE26D6f19100eB896a0#events).
 
 ---
 
-## 🔐 Provably Fair System
+## Known Limitations
 
-Every game uses the same on-chain randomness formula:
-
-```solidity
-bytes32 seed = keccak256(abi.encodePacked(
-    block.prevrandao,   // Ethereum Beacon Chain RANDAO value
-    block.timestamp,    // Block timestamp
-    msg.sender,         // Player address
-    gameCount,          // Monotonically increasing game index
-    betAmount           // Bet in wei
-));
-```
-
-**All 5 inputs are visible on Etherscan.** Any player can independently verify any result:
-
-```js
-import { keccak256, encodePacked } from "viem";
-
-const seed = keccak256(encodePacked(
-  ["uint256", "uint256", "address", "uint256", "uint256"],
-  [prevrandao, timestamp, playerAddress, gameCountBefore, betAmountWei]
-));
-
-// Coin Flip: result = BigInt(seed) % 2n  (0 = Heads, 1 = Tails)
-// Dice:      roll   = BigInt(seed) % 100n + 1n  (1–100)
-// Limbo:     crash  = 990000n / (BigInt(seed) % 9900n + 1n)  (in bps)
-```
-
-### Limitation
-`block.prevrandao` gives validators theoretical 1-bit influence (they can skip proposing). For production high-stakes use, Chainlink VRF is the right choice. For testnet play this is perfectly adequate.
+- **Pool liquidity** — contract needs house float ETH. If pool runs dry, large wins revert with "House pool insufficient". UI warns you before betting.
+- **Block times** — Sepolia confirms in ~12–15s. All animations wait for blockchain confirmation before showing results.
+- **No WalletConnect** — removed due to Reown's paid plan. Mobile users: open in MetaMask's built-in browser.
 
 ---
 
-## 🏗️ Architecture
+## Why Ethereum
+
+1. `block.prevrandao` (EIP-4399) gives clean on-chain randomness
+2. wagmi v2 + viem + RainbowKit ecosystem is mature for 48h builds
+3. Sepolia has the best free faucet + explorer coverage
+
+---
+
+## Hardest Problem: TX Timing vs Animation
+
+Results arrive ~12s after bet. The challenge: animations must feel natural — coin stops *after* result, result toast appears *after* animation ends.
+
+**Solution:** store blockchain result in a `ref` (not state). Animation reads the ref on every frame, stops when it reaches the result. Only after animation ends → toast shows. Crash game uses this most visibly — the rocket flies until it hits the randomly-determined crash point stored in the ref.
+
+---
+
+## What I'd Build Next
+
+1. **Chainlink VRF** — replace `block.prevrandao` with stronger randomness
+2. **Base Sepolia** — 2-second blocks for snappier UX
+3. **Multiplayer** — shared pool, live bet feed, leaderboard
+
+---
+
+## How I Used AI Tools
+
+**Worked well:**
+- Full smart contract generation from spec (correct payout math + events on first compile)
+- Game component scaffolding with iterative UX steering
+- Debugging async timing: describing "result appears before animation ends" → ref-based solution
+- SVG/CSS generation: neuropunk hero, mini guitar icons, circuit board patterns
+
+**Required human judgment:**
+- `coolMode` in RainbowKit fired confetti during wallet selection — caught only by manual testing
+- Mobile coin flip: AI suggested CSS 3D `backface-visibility` which fails on Safari — rewrote to JS single-face approach
+- Pool liquidity edge case: AI didn't catch that player's own deposit IS the contract's ETH — required reasoning about contract state
+
+---
+
+## Stack
 
 ```
-Frontend (Next.js 14)
-├── RainbowKit + wagmi v2 + viem
-├── Tailwind CSS (Stake.com dark design)
-├── Web Audio API (procedural sounds)
-└── Deployed: Surge.sh
-
-Smart Contracts (Solidity 0.8.24)
-├── CasinoFlip.sol — Coin Flip only (v1)
-└── CasinoV2.sol  — Coin Flip + Dice + Limbo (v2)
-    Deployed: Ethereum Sepolia
-    Verified: Sourcify + Blockscout
+Contract:   Solidity ^0.8.24 (Remix IDE → Sepolia)
+Frontend:   Next.js 14 · wagmi v2 · viem · RainbowKit v2
+Styling:    Tailwind CSS + Web Audio API (procedural sounds)
+Hosting:    Surge.sh
 ```
 
----
-
-## ❓ Why Ethereum over Solana
-
-1. **Tooling maturity** — Remix IDE, ethers.js, wagmi are battle-tested
-2. **RainbowKit** — Handles wallet UX beautifully, works on mobile via MetaMask deep links
-3. **EIP-4399 PREVRANDAO** — Beacon chain randomness is built-in, no oracle needed for testnet
-4. **Etherscan** — Best-in-class block explorer for verifying provable fairness
-
----
-
-## 🧗 Hardest Thing to Figure Out
-
-**Mobile wallet connection.** WalletConnect requires a paid project ID; using `"demo"` causes connection errors. The fix: add a `🦊 Open in MetaMask App` deep link button (`metamask.app.link/dapp/...`) that opens the site directly inside MetaMask's in-app browser — zero WalletConnect required, works perfectly.
-
-**CORS on public RPC.** The site served over `http://` was blocked from calling `rpc.sepolia.org`. Fix: force HTTPS + switch to a multi-RPC fallback (`publicnode.com`, `drpc.org`, `rpc2.sepolia.org`).
-
----
-
-## 🚀 What's Next
-
-- [ ] Crash/Aviator game (most viral crypto casino game)
-- [ ] Plinko with visual ball-drop animation
-- [ ] Chainlink VRF for production-grade randomness
-- [ ] Game history leaderboard (read from events)
-- [ ] Real WalletConnect project ID for full mobile support
-- [ ] GitHub Actions CI/CD → auto-deploy on push
-
----
-
-## 🤖 AI Tools Used
-
-Built entirely with **Claude (Anthropic)** as the primary development partner.
-
-**What worked brilliantly:**
-- Writing complete Solidity contracts from scratch in seconds
-- Generating all Web Audio API sound logic (no audio files needed)
-- Debugging the RainbowKit mobile connection flow
-- Redesigning the full UI from scratch (Stake.com dark style) in one pass
-
-**What didn't work / needed human input:**
-- Actually deploying contracts required manual Remix steps (Captcha on faucets, browser wallet interaction)
-- WalletConnect OAuth registration needed browser access
-- Recording the Loom video 😄
-
-**Workflow:** describe what to build → AI writes complete code → deploy → test → iterate. Entire 48h sprint was essentially pair-programming with Claude.
-
----
-
-## 🔧 Local Development
+## Local Setup
 
 ```bash
-git clone <repo>
-cd casino-flip/frontend
-
-cp .env.example .env.local
-# Fill in:
-# NEXT_PUBLIC_CONTRACT_ADDRESS=0xd80512F239663157F89107A555d3437eCd1fB067
-# NEXT_PUBLIC_CONTRACT_V2_ADDRESS=0x846a27b62bbcdc40E09496E15d11095B48DE9caA
-
+git clone https://github.com/FristerMax/flipchain-casino
+cd flipchain-casino/frontend
 npm install
+cp .env.example .env.local
 npm run dev
-# → http://localhost:3000
 ```
-
-### Deploy your own contracts
-
-1. Open [remix.ethereum.org](https://remix.ethereum.org)
-2. Paste `contracts/CasinoV2.sol`
-3. Compile with Solidity 0.8.24
-4. Deploy to Sepolia with MetaMask (VALUE = 0.02 ETH)
-5. Update `NEXT_PUBLIC_CONTRACT_V2_ADDRESS` in `.env.local`
-
-### Get Sepolia ETH (free)
-
-- https://cloud.google.com/application/web3/faucet/ethereum/sepolia (Google account)
-- https://sepoliafaucet.com (Alchemy account)
-
----
-
-*Educational demo — no real ETH involved.*
