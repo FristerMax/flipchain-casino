@@ -488,8 +488,7 @@ function Footer() {
         </div>
 
         <p className="text-white/20 text-xs">
-          Sepolia Testnet Educational demo &nbsp;•&nbsp; No real ETH &nbsp;•&nbsp; Sepolianbsp;•Educational demo &nbsp;•&nbsp; No real ETH &nbsp;•&nbsp; Sepolianbsp; No Real ETH Educational demo &nbsp;•&nbsp; No real ETH &nbsp;•&nbsp; Sepolianbsp;•Educational demo &nbsp;•&nbsp; No real ETH &nbsp;•&nbsp; Sepolianbsp; Provably Fair
-          testnet
+          Sepolia Testnet &nbsp;•&nbsp; No Real ETH &nbsp;•&nbsp; Provably Fair
         </p>
 
         <div className="flex items-center gap-4">

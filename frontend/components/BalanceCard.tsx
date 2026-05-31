@@ -486,13 +486,12 @@ export function BalanceCard({ game }: { game?: string }) {
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Switch contract based on active game
-  const isSlots = game === "slots";
-  const activeConfig = isSlots ? SLOTS_CONFIG : CONTRACT_V2_CONFIG;
-  const gameLabel = isSlots ? "🎰 Slots" : "🎮 Games";
-  const accentColor = isSlots ? "#ff8888" : "#00c74d";
-  const accentBg = isSlots ? "rgba(255,107,107,0.08)" : "rgba(0,199,77,0.08)";
-  const accentBorder = isSlots ? "rgba(255,107,107,0.15)" : "rgba(0,199,77,0.15)";
+  // All games use the same CasinoAll contract
+  const activeConfig = CONTRACT_V2_CONFIG;
+  const gameLabel = "🎮 Games";
+  const accentColor = "#00c74d";
+  const accentBg = "rgba(0,199,77,0.08)";
+  const accentBorder = "rgba(0,199,77,0.15)";
 
   const { data: walletBalance } = useBalance({ address });
 

@@ -192,20 +192,20 @@ function QuickDeposit({ onSuccess }: { onSuccess: () => void }) {
 
   const pending = isPending || isConfirming;
   return (
-    <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(255,107,107,0.06)", border: "1px solid rgba(255,107,107,0.2)" }}>
-      <p className="text-[#ff8888] text-xs font-semibold text-center">Deposit ETH to play Slots</p>
+    <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(0,199,77,0.06)", border: "1px solid rgba(0,199,77,0.2)" }}>
+      <p className="text-xs font-semibold text-center" style={{ color: "#00c74d" }}>Deposit ETH to play</p>
       <div className="flex gap-2">
         {["0.005","0.01","0.02","0.05"].map(v => (
           <button key={v} onClick={() => setAmount(v)} disabled={pending}
             className="flex-1 py-1.5 text-xs rounded-lg transition-all disabled:opacity-40"
-            style={{ background: amount===v?"rgba(255,107,107,0.2)":"rgba(255,255,255,0.04)", border: amount===v?"1px solid rgba(255,107,107,0.5)":"1px solid rgba(255,255,255,0.08)", color: amount===v?"#ff8888":"rgba(255,255,255,0.4)" }}>
+            style={{ background: amount===v?"rgba(0,199,77,0.15)":"rgba(255,255,255,0.04)", border: amount===v?"1px solid rgba(0,199,77,0.4)":"1px solid rgba(255,255,255,0.08)", color: amount===v?"#00c74d":"rgba(255,255,255,0.4)" }}>
             {v}
           </button>
         ))}
       </div>
       <button onClick={handleDeposit} disabled={pending}
         className="w-full py-2.5 rounded-xl text-sm font-bold uppercase tracking-wide transition-all"
-        style={{ background: pending ? "rgba(255,107,107,0.15)" : "linear-gradient(135deg,#ff6b6b,#c0392b)", color: pending ? "rgba(255,107,107,0.5)" : "#fff", boxShadow: pending ? "none" : "0 0 16px rgba(255,107,107,0.3)" }}>
+        style={{ background: pending ? "rgba(0,199,77,0.15)" : "linear-gradient(135deg,#00c74d,#009e3d)", color: pending ? "rgba(0,199,77,0.5)" : "#fff", boxShadow: pending ? "none" : "0 0 16px rgba(0,199,77,0.3)" }}>
         {pending ? <span className="flex items-center justify-center gap-2"><Spinner /> {isConfirming ? "Confirming…" : "Confirm…"}</span> : `Deposit ${amount} ETH →`}
       </button>
     </div>
@@ -448,13 +448,13 @@ export function SlotsGame() {
 
       {/* Balance */}
       <div className="flex items-center justify-between px-1 py-1 rounded-lg" style={{
-        background: bal === 0n ? "rgba(246,70,93,0.08)" : "rgba(255,107,107,0.06)",
-        border: bal === 0n ? "1px solid rgba(246,70,93,0.2)" : "1px solid rgba(255,107,107,0.1)",
+        background: bal === 0n ? "rgba(246,70,93,0.08)" : "rgba(0,199,77,0.06)",
+        border: bal === 0n ? "1px solid rgba(246,70,93,0.2)" : "1px solid rgba(0,199,77,0.1)",
       }}>
         <span className="text-white/35 text-xs">Slots Balance</span>
         <div className="flex items-center gap-2">
           {bal === 0n && <span className="text-[10px] text-red-400">← Deposit first</span>}
-          <span className="font-mono font-bold text-sm" style={{ color: bal === 0n ? "#f6465d" : "#ff8888" }}>
+          <span className="font-mono font-bold text-sm" style={{ color: bal === 0n ? "#f6465d" : "#00c74d" }}>
             {balEth.toFixed(4)} ETH
           </span>
         </div>
