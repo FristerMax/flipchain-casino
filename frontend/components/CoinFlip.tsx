@@ -114,72 +114,80 @@ function AnimatedCoin({
 }) {
   const [displayResult, setDisplayResult] = useState<CoinSide | null>(null);
   const [visibleFace, setVisibleFace] = useState<CoinSide>(choice);
-  const ivRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ivRef       = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pauseRef    = useRef<ReturnType<typeof setTimeout>  | null>(null);
+  // Target face tracked in a ref so idle loop reads it without restarting
+  const targetRef   = useRef<CoinSide>(choice);
 
-  // When not flipping: show choice or result
-  useEffect(() => {
-    if (isFlipping) return;
-    setVisibleFace(result !== null ? result : choice);
-  }, [choice, isFlipping, result]);
-
-  // FLIP animation: alternate face every half-cycle (coinScaleX squish)
+  // Keep targetRef in sync with choice / result — no restart of the loop
   useEffect(() => {
     if (!isFlipping) {
-      if (ivRef.current) clearInterval(ivRef.current);
-      return;
+      targetRef.current = result !== null ? result : choice;
     }
-    setDisplayResult(null);
-    const halfCycle = fast ? 60 : 175;
-    ivRef.current = setInterval(() => {
-      setVisibleFace(f => f === 0 ? 1 : 0);
-    }, halfCycle);
-    return () => { if (ivRef.current) clearInterval(ivRef.current); };
-  }, [isFlipping, fast]);
+  }, [choice, result, isFlipping]);
 
-  // IDLE rotation: switch face only when coin is edge-on (rotateY = 90° and 270°)
-  // coinIdle period = 7s, edge-on at 25% (1750ms) and 75% (5250ms)
-  // → first switch at quarterCycle, then every halfCycle
+  // IDLE: continuous loop, never restarts on choice change
+  // — reads targetRef each edge-on moment and switches toward target
   useEffect(() => {
     if (isFlipping || displayResult !== null) return;
-    const cycleDuration = fast ? 1500 : 7000;
-    const quarterCycle = cycleDuration / 4; // 1750ms — coin is edge-on here
-    const halfCycle = cycleDuration / 2;    // 3500ms — interval between switches
 
-    // First switch at the first edge-on moment
+    const idleCycle = fast ? 1200 : 4000;
+    const quarter   = idleCycle * 0.25; // first edge-on
+    const half      = idleCycle * 0.5;  // interval between edge-ons
+
+    // Start face from current target
+    setVisibleFace(targetRef.current);
+
     const t = setTimeout(() => {
-      setVisibleFace(f => f === 0 ? 1 : 0);
-      // Then switch every halfCycle (each time coin passes through edge-on)
-      ivRef.current = setInterval(() => {
-        setVisibleFace(f => f === 0 ? 1 : 0);
-      }, halfCycle);
-    }, quarterCycle);
+      // At each edge-on: if we need to match target, switch; else alternate
+      const doSwitch = () => {
+        setVisibleFace(cur => {
+          // If target differs → switch to it; otherwise keep alternating
+          return cur !== targetRef.current ? targetRef.current : (cur === 0 ? 1 : 0);
+        });
+      };
+      doSwitch();
+      ivRef.current = setInterval(doSwitch, half);
+    }, quarter);
 
     return () => {
       clearTimeout(t);
-      if (ivRef.current) clearInterval(ivRef.current);
+      if (ivRef.current) { clearInterval(ivRef.current); ivRef.current = null; }
     };
+  // Only restart on flipping/result/fast — NOT on choice
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlipping, displayResult, fast]);
 
-  // On result: freeze face
+  // FLIP: fast alternation
+  useEffect(() => {
+    if (!isFlipping) {
+      if (ivRef.current) { clearInterval(ivRef.current); ivRef.current = null; }
+      return;
+    }
+    setDisplayResult(null);
+    const half = fast ? 60 : 175;
+    ivRef.current = setInterval(() => setVisibleFace(f => f === 0 ? 1 : 0), half);
+    return () => { if (ivRef.current) clearInterval(ivRef.current); };
+  }, [isFlipping, fast]);
+
+  // Freeze on result
   useEffect(() => {
     if (!isFlipping && result !== null) {
       setDisplayResult(result);
       setVisibleFace(result);
-      if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
-      pauseTimerRef.current = setTimeout(() => setDisplayResult(null), 20000);
+      if (pauseRef.current) clearTimeout(pauseRef.current);
+      pauseRef.current = setTimeout(() => setDisplayResult(null), 20000);
     }
-    return () => { if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current); };
+    return () => { if (pauseRef.current) clearTimeout(pauseRef.current); };
   }, [isFlipping, result]);
 
   const halfCycleMs = fast ? 60 : 175;
-  // Flip: scaleX squeeze (reliable on all mobile)
   const spinStyle: React.CSSProperties = {
     animation: `coinScaleX ${halfCycleMs * 2}ms linear infinite`,
   };
-  // Idle: real rotateY rotation — only ONE face rendered so no overlap possible
+  // linear — smooth approach already baked into keyframes
   const idleStyle: React.CSSProperties = {
-    animation: `coinIdle ${fast ? "1.5s" : "7s"} linear infinite`,
+    animation: `coinSpinSmooth ${fast ? "1.2s" : "4s"} linear infinite`,
   };
 
   const glowColor =
@@ -194,6 +202,7 @@ function AnimatedCoin({
         style={{ filter: `drop-shadow(0 0 ${isFlipping ? "28px rgba(240,185,11,0.7)" : `20px ${glowColor}`})` }}
       >
         <div
+          key={`coin-${fast}-${isFlipping}`}
           className="w-40 h-40 relative"
           style={isFlipping ? spinStyle : idleStyle}
         >

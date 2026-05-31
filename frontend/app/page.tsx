@@ -370,12 +370,6 @@ function HeroDisconnected() {
           <NeuropunkEmblem />
         </div>
 
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4 text-xs font-bold uppercase tracking-widest"
-          style={{background:"rgba(0,245,255,0.08)", border:"1px solid rgba(0,245,255,0.3)", color:"#00f5ff"}}>
-          <span style={{animation:"pulseGlow 1.5s infinite", color:"#00ff88"}}>▮▮▮</span>
-          NEUROPUNK CASINO
-        </div>
 
         {/* Title with glitch effect */}
         <h1 className="font-display font-black leading-none mb-2 relative"
